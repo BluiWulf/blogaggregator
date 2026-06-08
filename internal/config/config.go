@@ -46,7 +46,7 @@ func getConfigPath() (string, error) {
 		return "", err
 	}
 
-	return home + cfgFile, nil
+	return home + "/" + cfgFile, nil
 }
 
 func writeConfig(cfg *Config) error {
@@ -55,6 +55,13 @@ func writeConfig(cfg *Config) error {
 		return err
 	}
 
-	encoder := json.NewEncoder(cfgPath)
+	file, err := os.Create(cfgPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "\t")
 	return encoder.Encode(cfg)
 }
