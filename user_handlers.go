@@ -12,7 +12,7 @@ import (
 
 func commandLogin(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("%v command expects a single argument, the username", cmd.name)
+		return fmt.Errorf("%v command expects one argument, the username", cmd.name)
 	}
 	name := cmd.args[0]
 	_, err := s.db.GetUser(context.Background(), name)
@@ -31,7 +31,7 @@ func commandLogin(s *state, cmd command) error {
 
 func commandRegister(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("%v command expects a single argument, the username", cmd.name)
+		return fmt.Errorf("%v command expects one argument, the username", cmd.name)
 	}
 	name := cmd.args[0]
 	user, err := s.db.GetUser(context.Background(), name)
@@ -86,8 +86,8 @@ func commandUsers(s *state, cmd command) error {
 		return fmt.Errorf("failed to get list of users: %v", err)
 	}
 	
-	fmt.Println()
 	for _, user := range users {
+		fmt.Println()
 		if user.Name == s.cfg.CurrentUser {
 			fmt.Printf("* %v (current)\n", user.Name)
 		} else {

@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"os"
 
@@ -23,10 +25,13 @@ type errorCode struct {
 }
 
 func main() {
+	// Reading configuration data
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// Opening database
 	db, err := sql.Open("postgres", cfg.DbUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -36,8 +41,9 @@ func main() {
 		db:	 dbQs,
 		cfg: &cfg,
 	}
-	cmds := commands{ cmds: make(map[string]func(*state, command) error) }
 
+	// Getting command from user
+	cmds := commands{ cmds: make(map[string]func(*state, command) error) }
 	cliArgs := os.Args
 	if len(cliArgs) < 2 {
 		log.Fatal(errors.New("no command has been provided"))
@@ -47,12 +53,31 @@ func main() {
 		args: cliArgs[2:],
 	}
 
+	// Registering available commands
 	cmds.register("login", commandLogin)
 	cmds.register("register", commandRegister)
 	cmds.register("reset", commandReset)
 	cmds.register("users", commandUsers)
+	cmds.register("agg", commandAgg)
+	cmds.register("addfeed", middlewareLoggedIn(commandAddFeed))
+	cmds.register("feeds", commandFeeds)
+	cmds.register("follow", middlewareLoggedIn(commandFollow))
+	cmds.register("following", middlewareLoggedIn(commandFollowing))
+	cmds.register("unfollow", middlewareLoggedIn(commandUnfollow))
+	
+	// Running command
 	err = cmds.run(&s, cmd)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func middlewareLoggedIn(cmdHandler func(s *state, cmd command, user database.User) error) func(*state, command) error {
+	return func(s *state, cmd command) error {
+		user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUser)
+		if err != nil {
+			return fmt.Errorf("current user '%v' is not registered: %v", s.cfg.CurrentUser, err)
+		}
+		return cmdHandler(s, cmd, user)
 	}
 }
