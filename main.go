@@ -64,6 +64,7 @@ func main() {
 	cmds.register("follow", middlewareLoggedIn(commandFollow))
 	cmds.register("following", middlewareLoggedIn(commandFollowing))
 	cmds.register("unfollow", middlewareLoggedIn(commandUnfollow))
+	cmds.register("browse", middlewareLoggedIn(commandBrowse))
 	
 	// Running command
 	err = cmds.run(&s, cmd)

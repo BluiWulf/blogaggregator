@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/bluiwulf/blogaggregator/internal/database"
@@ -128,6 +129,40 @@ func commandFeeds(s *state, cmd command) error {
 		fmt.Printf("User: %v\n", user.Name)
 	}
 	fmt.Println()
+
+	return nil
+}
+
+func commandBrowse(s *state, cmd command, user database.User) error {
+	if len(cmd.args) > 1 {
+		return fmt.Errorf("%v command expects one optional argument max, the post limit", cmd.name)
+	}
+	limit := 2
+	if len(cmd.args) == 1 {
+		optLimit, err := strconv.Atoi(cmd.args[0])
+		if err != nil {
+			return fmt.Errorf("limit passed is not valid: %v", err)
+		}
+		limit = optLimit
+	}
+
+	userPostsParams:= database.GetPostsForUserParams{
+		UserID:	user.ID,
+		Limit:	int32(limit),
+	}
+	posts, err := s.db.GetPostsForUser(context.Background(), userPostsParams)
+	if err != nil {
+		return fmt.Errorf("failed to get list of user posts: %v", err)
+	}
+	for _, post := range posts {
+		fmt.Println("---")
+		fmt.Printf("Title: %v\n", post.Title)
+		fmt.Printf("Link: %v\n", post.Url)
+		fmt.Printf("Published: %v\n", post.PublishedAt)
+		fmt.Println()
+		fmt.Printf("Description: %v\n", post.Description)
+		fmt.Println("---")
+	}
 
 	return nil
 }
